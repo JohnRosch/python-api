@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Product Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { color: #333; margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background-color: #45a049; }
+        .product-item { background: #fff; padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .product-item:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Section 1: Add Product Form -->
+    <div class="card">
+        <h2>Add New Product</h2>
+        <form id="productForm">
+            <div class="form-group">
+                <label for="name">Product Name:</label>
+                <input type="text" id="name" required placeholder="e.g., Headphones">
+            </div>
+            <div class="form-group">
+                <label for="price">Price ($):</label>
+                <input type="number" id="price" step="0.01" required placeholder="e.g., 99.99">
+            </div>
+            <button type="submit">Submit Product</button>
+        </form>
+    </div>
+
+    <!-- Section 2: Product List Display -->
+    <div class="card">
+        <h2>Product Inventory</h2>
+        <div id="productList">Loading products...</div>
+    </div>
+
+    <script>
+        // ✅ Fixed the IP, added port 8000, and added the /products path
+        const API_URL = 'http://localhost:8000/products';
+
+        // Function 1: Fetch and display products from FastAPI
+        async function fetchProducts() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                const productList = document.getElementById('productList');
+                productList.innerHTML = ''; // Clear previous items
+
+                // Convert object dictionary into an iterable array loop
+                Object.keys(data).forEach(id => {
+                    const item = data[id];
+                    productList.innerHTML += `
+                        <div class="product-item">
+                            <strong>📦 ${item.name}</strong>
+                            <span>$${item.price.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                document.getElementById('productList').innerText = 'Failed to load products.';
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        // Function 2: Handle Form Submit (POST Request)
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevents page from reloading automatically
+
+            const name = document.getElementById('name').value;
+            const price = parseFloat(document.getElementById('price').value);
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, price })
+                });
+
+                if (response.ok) {
+                    document.getElementById('productForm').reset(); // Clear input boxes
+                    fetchProducts(); // Instantly refresh list with new product!
+                }
+            } catch (error) {
+                alert('Error adding product.');
+                console.error('Error posting data:', error);
+            }
+        });
+
+        // Run fetch function automatically when the webpage opens
+        fetchProducts();
+    </script>
+</body>
+</html>

@@ -1,9 +1,18 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = FastAPI()
 
-# 1. Define what a Product looks like using Pydantic
+# ⚠️ MANDATORY FOR FRONTEND: Allow your browser to communicate with the API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows any local HTML file to access the data
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 class Product(BaseModel):
     name: str
     price: float
@@ -21,13 +30,8 @@ def read_root():
 def get_products():
     return products_db
 
-# 2. Create the POST endpoint to add data
 @app.post("/products")
 def create_product(product: Product):
-    # Generate a new unique ID based on the dictionary size
-    new_id = max(products_db.keys()) + 1
-    
-    # Save the incoming data to our dictionary
+    new_id = max(products_db.keys()) + 1 if products_db else 1
     products_db[new_id] = {"name": product.name, "price": product.price}
-    
     return {"message": "Product added successfully!", "id": new_id, "data": products_db[new_id]}
