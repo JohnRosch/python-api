@@ -1,29 +1,34 @@
 import os
+from typing import Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Field, SQLModel, create_engine, Session, select
-from typing import Optional
+from dotenv import load_dotenv
 
-# 1. Blueprint schema for our permanent Postgres table
+# 1. Automatically read your local .env file variables
+load_dotenv()
+
+# 2. Blueprint schema for our permanent Postgres table
 class Product(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     price: float
 
-# 2. Get connection string from cloud settings (Fallback to your Neon link locally)
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", 
-    "postgresql://neondb_owner:npg_PwCtrq8hVK4d@ep-square-fog-ao31lgig.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
-)
+# 3. Get connection string cleanly from environment memory
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is missing!")
 
 # Fix for Render handling modern postgres drivers securely
-if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 engine = create_engine(DATABASE_URL)
 
 app = FastAPI()
 
+# 4. Enable browser communication (CORS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
